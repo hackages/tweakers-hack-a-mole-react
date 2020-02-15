@@ -1,123 +1,75 @@
-import React, { Component } from 'react';
-import './static/style.css';
+import React, { useReducer } from 'react';
+import { ACTION_TYPES, reducer, initialState } from './reducer';
+import { GAME_STATES, changeGameState } from './changeGameState';
 import Button from './components/Button';
 import Board from './components/Board';
 import Score from './components/Score';
 import ScoreTable from './components/ScoreTable';
+import './static/style.css';
 
-const GAME_STATES = {
-  waiting: 'waiting',
-  playing: 'playing',
-  pause: 'pause',
-};
+const { CLICKED_IDX, SCORE, ACTIVE_IDX } = ACTION_TYPES;
+const { waiting, playing, pause } = GAME_STATES;
 
-class App extends Component {
-  state = {
-    score: 0,
-    activeIdx: -1,
-    clickedIdx: -1,
-    gameStatus: GAME_STATES.waiting,
-    allScores: [],
+const App = () => {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { score, clickedIdx, activeIdx, allScores, gameStatus } = state;
+
+  const hit = idx => {
+    dispatch({ type: CLICKED_IDX, payload: idx });
+    dispatch({ type: SCORE });
   };
 
-  hit = idx => {
-    const { score } = this.state;
-    this.setState({
-      clickedIdx: idx,
-      score: score + 1,
-    });
-  };
-
-  changeGameState = status => {
-    const { resetGame } = this;
-
-    switch (status) {
-      case GAME_STATES.waiting:
-        const { score, allScores } = this.state;
-        this.setState({
-          allScores: [...allScores, score],
-          gameStatus: GAME_STATES.waiting,
-        });
-        resetGame();
-        break;
-      case GAME_STATES.playing:
-        this.setState({ gameStatus: GAME_STATES.playing });
-        break;
-
-      default:
-        this.setState({ gameStatus: GAME_STATES.waiting });
-        break;
-    }
-  };
-
-  changeActiveMole = () => {
+  const changeActiveMole = () => {
     const nextActive = Math.floor(Math.random(9) * 10);
-    this.setState({
-      activeIdx: nextActive,
-      clickedIdx: -1,
-    });
+    dispatch({ type: ACTIVE_IDX, payload: nextActive });
+    dispatch({ type: CLICKED_IDX, payload: -1 });
   };
 
-  resetGame = () => {
-    this.setState({
-      activeIdx: -1,
-      clickedIdx: -1,
-      score: 0,
-    });
-  };
+  return (
+    <div className='app'>
+      {gameStatus === waiting || gameStatus === pause ? 'Hello World !' : ''}
 
-  render() {
-    const { hit, changeActiveMole, changeGameState } = this;
-    const { activeIdx, clickedIdx, score, gameStatus, allScores } = this.state;
-    return (
-      <div className='app'>
-        {gameStatus === GAME_STATES.waiting || gameStatus === GAME_STATES.pause
-          ? 'Hello World !'
-          : ''}
-
-        <div className='game'>
-          {gameStatus === GAME_STATES.waiting ? (
+      <div className='game'>
+        {gameStatus === waiting || gameStatus === pause ? (
+          <div>
+            <Button
+              className='button'
+              text={gameStatus === waiting ? 'Start' : 'Resume'}
+              onClick={() => changeGameState({ status: playing, dispatch })}
+            />
+            {allScores.length > 0 && (
+              <ScoreTable
+                scores={allScores.sort((a, b) => b - a).slice(0, 3)}
+              />
+            )}
+          </div>
+        ) : (
+          <>
+            <Board
+              onClick={hit}
+              changeActiveMole={changeActiveMole}
+              activeIdx={activeIdx}
+              clickedIdx={clickedIdx}
+            />
             <div>
+              <Score className={'score'} score={score} />
+
               <Button
                 className='button'
-                text={gameStatus === GAME_STATES.waiting ? 'Start' : 'Resume'}
-                onClick={() => changeGameState('playing')}
+                text='Stop'
+                onClick={() => changeGameState({ status: waiting, dispatch })}
               />
-              {allScores.length > 0 && (
-                <ScoreTable
-                  scores={allScores.sort((a, b) => b - a).slice(0, 3)}
-                />
-              )}
+              <Button
+                className='button'
+                text='Pause'
+                onClick={() => changeGameState({ status: pause, dispatch })}
+              />
             </div>
-          ) : (
-            <>
-              <Board
-                onClick={hit}
-                changeActiveMole={changeActiveMole}
-                activeIdx={activeIdx}
-                clickedIdx={clickedIdx}
-              />
-              <div>
-                <Score className={'score'} score={score} />
-
-                <Button
-                  className='button'
-                  text='Stop'
-                  onClick={() => changeGameState(GAME_STATES.waiting)}
-                />
-
-                <Button
-                  className='button'
-                  text='Pause'
-                  onClick={() => changeGameState(GAME_STATES.pause)}
-                />
-              </div>
-            </>
-          )}
-        </div>
+          </>
+        )}
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 export default App;

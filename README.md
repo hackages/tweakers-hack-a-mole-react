@@ -52,7 +52,7 @@ The board will contain 9 grounds. The goal is to render the content of our board
 
 ```js
 <div className='board'>
-  // Bellow is what should be rendered 9 times.
+  // Below is what should be rendered 9 times.
   <div className='board-item'>
     <div className='mole'> </div>
     <div className='ground'> </div>
